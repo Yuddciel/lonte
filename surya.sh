@@ -1,54 +1,80 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
-# Copyright (C) 2020 azrim.
-# All rights reserved.
+# Copyright (C) 2023 Edwiin Kusuma Jaya (ryuzenn)
+#
+# Simple Local Kernel Build Script
+#
+# Configured for Poco x3 NFC / Surya custom kernel source
+#
+# Setup build env with akhilnarang/scripts repo
+#
+# Use this script on root of kernel directory
 
-# Init
-KERNEL_DIR="${PWD}"
-cd "$KERNEL_DIR" || exit
-DTB_TYPE="" # define as "single" if want use single file
-KERN_IMG="${KERNEL_DIR}"/out/arch/arm64/boot/Image.gz   # if use single file define as Image.gz-dtb instead
-KERN_DTBO="${KERNEL_DIR}"/out/arch/arm64/boot/dtbo.img       # and comment this variable
-KERN_DTB="${KERNEL_DIR}"/out/arch/arm64/boot/dtb.img
-ANYKERNEL="${HOME}"/anykernel
-LOGS="${HOME}"/${CHEAD}.log
+SECONDS=0 # builtin bash timer
+LOCAL_DIR=/workspace/Yuddciel/
+ZIPNAME="HyperOS:[HiraTeam]-$(TZ=Asia/Jakarta date +"%Y%m%d-%H%M").zip"
+TC_DIR="${LOCAL_DIR}toolchain"
+CLANG_DIR="${TC_DIR}/clang-rastamod"
+GCC_64_DIR="${LOCAL_DIR}toolchain/aarch64-linux-android-4.9"
+GCC_32_DIR="${LOCAL_DIR}toolchain/arm-linux-androideabi-4.9"
+AK3_DIR="${LOCAL_DIR}/AK3_DIR3"
+DEFCONFIG="vendor/surya_defconfig"
 
-# Repo URL
-ANYKERNEL_REPO="https://github.com/Yuddciel/AnyKernel3.git"
-ANYKERNEL_BRANCH="FSociety"
+export PATH="$CLANG_DIR/bin:$PATH"
+export KBUILD_BUILD_USER="Mahirooo"
+export KBUILD_BUILD_HOST="hirateam"
+export LD_LIBRARY_PATH="$CLANG_DIR/lib:$LD_LIBRARY_PATH"
+export KBUILD_BUILD_VERSION="1"
+export LOCALVERSION
 
-# Repo info
-PARSE_BRANCH="$(git rev-parse --abbrev-ref HEAD)"
-PARSE_ORIGIN="$(git config --get remote.origin.url)"
-COMMIT_POINT="$(git log --pretty=format:'%h : %s' -1)"
-CHEAD="$(git rev-parse --short HEAD)"
-LATEST_COMMIT="[$COMMIT_POINT](https://github.com/Yuddciel/lonte/commit/$CHEAD)"
-
-# Compiler
-mkdir -p "/workspace/Yuddciel/silont-clang"
-COMP_TYPE="clang" # unset if want to use gcc as compiler
-CLANG_DIR="/workspace/Yuddciel/silont-clang"
-CLANG_URL="https://github.com/silont-project/silont-clang/archive/20210117.tar.gz"
-GCC_DIR="" # Doesn't needed if use proton-clang
-GCC32_DIR="" # Doesn't needed if use proton-clang
-CLANG_FILE="/workspace/Yuddciel/clang.tar.gz"
-
-git clone https://gitlab.com/zlatanr/dora-clang-1 --depth=1 --single-branch $CLANG_DIR
-
-if [[ "${COMP_TYPE}" =~ "clang" ]]; then
-    CSTRING=$("$CLANG_DIR"/bin/clang --version | head -n 1 | perl -pe 's/\(http.*?\)//gs' | sed -e 's/  */ /g' -e 's/[[:space:]]*$//')
-    COMP_PATH="$CLANG_DIR/bin:${PATH}"
-else
-    COMP_PATH="${GCC_DIR}/bin:${GCC32_DIR}/bin:${PATH}"
+if ! [ -d "${CLANG_DIR}" ]; then
+echo "Clang not found! Cloning to ${TC_DIR}..."
+if ! git clone --depth=1 -b clang-21.0 https://gitlab.com/kutemeikito/rastamod69-clang ${CLANG_DIR}; then
+echo "Cloning failed! Aborting..."
+exit 1
+fi
 fi
 
-# Defconfig
-DEFCONFIG="surya_defconfig"
-REGENERATE_DEFCONFIG="" # unset if don't want to regenerate defconfig
+if ! [ -d "${GCC_64_DIR}" ]; then
+echo "gcc not found! Cloning to ${GCC_64_DIR}..."
+if ! git clone --depth=1 -b lineage-19.1 https://github.com/LineageOS/android_prebuilts_gcc_linux-x86_aarch64_aarch64-linux-android-4.9.git ${GCC_64_DIR}; then
+echo "Cloning failed! Aborting..."
+exit 1
+fi
+fi
+
+if ! [ -d "${GCC_32_DIR}" ]; then
+echo "gcc_32 not found! Cloning to ${GCC_32_DIR}..."
+if ! git clone --depth=1 -b lineage-19.1 https://github.com/LineageOS/android_prebuilts_gcc_linux-x86_arm_arm-linux-androideabi-4.9.git ${GCC_32_DIR}; then
+echo "Cloning failed! Aborting..."
+exit 1
+fi
+fi
+
+mkdir -p out
+make O=out ARCH=arm64 $DEFCONFIG
+
+echo -e "\nStarting compilation...\n"
+make -j$(nproc --all) O=out \
+					  ARCH=arm64 \
+					  CC=clang \
+					  LD=ld.lld \
+					  AR=llvm-ar \
+					  AS=llvm-as \
+					  NM=llvm-nm \
+					  OBJCOPY=llvm-objcopy \
+					  OBJDUMP=llvm-objdump \
+					  STRIP=llvm-strip \
+					  CROSS_COMPILE=aarch64-linux-android- \
+					  CROSS_COMPILE_COMPAT=arm-linux-gnueabi- \
+					  CLANG_TRIPLE=aarch64-linux-gnu- \
+					  Image \
+                                          dtb.img \
+					  dtbo.img
 
 # Telegram
-CHATID="-1002354747626" # Group/channel chatid (use rose/userbot to get it)
-TELEGRAM_TOKEN="7485743487:AAEKPw9ubSKZKit9BDHfNJSTWcWax4STUZs"
+CHATID="-1001156668998" # Group/channel chatid (use rose/userbot to get it)
+TELEGRAM_TOKEN="${TG_TOKEN}"
 
 # Export Telegram.sh
 TELEGRAM_FOLDER="${HOME}"/telegram
@@ -123,7 +149,7 @@ build_failed() {
 
 # Building
 makekernel() {
-    echo "mahiroo@hirateam" > "$KERNEL_DIR"/.builderdata
+    echo "azrim@Hearthaka" > "$KERNEL_DIR"/.builderdata
     export PATH="${COMP_PATH}"
     make O=out ARCH=arm64 ${DEFCONFIG}
     if [[ "${REGENERATE_DEFCONFIG}" =~ "true" ]]; then
@@ -139,29 +165,34 @@ makekernel() {
 }
 
 # Packing kranul
-packingkernel() {
-    # Copy compiled kernel
-    if [ -d "${ANYKERNEL}" ]; then
-        rm -rf "${ANYKERNEL}"
-    fi
-    git clone "$ANYKERNEL_REPO" -b "$ANYKERNEL_BRANCH" "${ANYKERNEL}"
-    if ! [ -f "${KERN_IMG}" ]; then
-        build_failed
-    fi
-    if ! [ -f "${KERN_DTBO}" ]; then
-        build_failed
-    fi
-    if [[ "${DTB_TYPE}" =~ "single" ]]; then
-        cp "${KERN_IMG}" "${ANYKERNEL}"/Image.gz-dtb
-    else
-        cp "${KERN_IMG}" "${ANYKERNEL}"/Image.gz
-        cp "${KERN_DTBO}" "${ANYKERNEL}"/dtbo.img
-        cp "${KERN_DTB}" "${ANYKERNEL}"/dtb.img
-    fi
+if [ -f "out/arch/arm64/boot/Image" ] && [ -f "out/arch/arm64/boot/dtbo.img" ]; then
+echo -e "\nKernel compiled succesfully! Zipping up...\n"
+if [ -d "$AK3_DIR" ]; then
+cp -r $AK3_DIR AK3_DIR3
+elif ! git clone -q https://github.com/ardia-kun/AK3_DIR3; then
+echo -e "\nAK3_DIR3 repo not found locally and cloning failed! Aborting..."
+exit 1
+fi
+cp out/arch/arm64/boot/Image AK3_DIR3
+cp out/arch/arm64/boot/dtbo.img AK3_DIR3
+cp out/arch/arm64/boot/dtb.img AK3_DIR3
+
+rm -f *zip
+cd AK3_DIR3
+git checkout main &> /dev/null
+zip -r9 "../$ZIPNAME" * -x '*.git*' README.md *placeholder
+fi
+cd ..
+
+rm -rf AK3_DIR3
 
     # Zip the kernel, or fail
-    cd "${ANYKERNEL}" || exit
+    cd "${AK3_DIR}" || exit
     zip -r9 "${TEMPZIPNAME}" ./* -x .git README.md *placeholder
+
+    # Sign the zip before sending it to Telegram
+    curl -sLo zipsigner-4.0.jar https://raw.githubusercontent.com/baalajimaestro/AK3_DIR3/master/zipsigner-4.0.jar
+    java -jar zipsigner-4.0.jar "${TEMPZIPNAME}" "${ZIPNAME}"
 
     END=$(date +"%s")
     DIFF=$(( END - START ))
