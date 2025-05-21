@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-#
+# 
 # Copyright (C) 2023 Edwiin Kusuma Jaya (ryuzenn)
 #
 # Simple Local Kernel Build Script
