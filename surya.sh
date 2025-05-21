@@ -25,21 +25,15 @@ CHEAD="$(git rev-parse --short HEAD)"
 LATEST_COMMIT="[$COMMIT_POINT](https://github.com/Yuddciel/lonte/commit/$CHEAD)"
 
 # Compiler
-mkdir -p "${PWD}/azure-clang"
+mkdir -p "/workspace/Yuddciel/silont-clang"
 COMP_TYPE="clang" # unset if want to use gcc as compiler
-CLANG_DIR="${PWD}/azure-clang"
+CLANG_DIR="/workspace/Yuddciel/silont-clang"
+CLANG_URL="https://github.com/silont-project/silont-clang/archive/20210117.tar.gz"
 GCC_DIR="" # Doesn't needed if use proton-clang
 GCC32_DIR="" # Doesn't needed if use proton-clang
-CLANG_FILE="${PWD}/clang.tar.gz"
+CLANG_FILE="/workspace/Yuddciel/clang.tar.gz"
 
-git clone https://gitlab.com/Panchajanya1999/azure-clang $CLANG_DIR
-
-export PATH=$(pwd)/azure-clang/bin:$PATH
-export CROSS_COMPILE=aarch64-linux-gnu-
-export CROSS_COMPILE_COMPAT=arm-linux-gnueabi-
-export LLVM=1
-export LLVM_IAS=1
-export ARCH=arm64
+git clone https://gitlab.com/zlatanr/dora-clang-1 --depth=1 --single-branch $CLANG_DIR
 
 if [[ "${COMP_TYPE}" =~ "clang" ]]; then
     CSTRING=$("$CLANG_DIR"/bin/clang --version | head -n 1 | perl -pe 's/\(http.*?\)//gs' | sed -e 's/  */ /g' -e 's/[[:space:]]*$//')
