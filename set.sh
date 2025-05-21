@@ -99,7 +99,7 @@ patch_config() {
 # Costumize
 patch_config
 versioning
-KERNEL="[TEST]-SiLonT"
+KERNEL="[MIUI]-SiLonT"
 DEVICE="Surya"
 KERNELNAME="${KERNEL}-${DEVICE}-${KERNELTYPE}-$(date +%y%m%d-%H%M)"
 TEMPZIPNAME="${KERNELNAME}-unsigned.zip"
