@@ -69,8 +69,8 @@ fi
 fi
 
 # Telegram
-CHATID="-1001156668998" # Group/channel chatid (use rose/userbot to get it)
-TELEGRAM_TOKEN="${TG_TOKEN}"
+CHATID="-1002354747626" # Group/channel chatid (use rose/userbot to get it)
+TELEGRAM_TOKEN="7485743487:AAEKPw9ubSKZKit9BDHfNJSTWcWax4STUZs"
 
 # Export Telegram.sh
 TELEGRAM_FOLDER="${HOME}"/telegram
