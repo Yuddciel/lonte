@@ -51,26 +51,12 @@ exit 1
 fi
 fi
 
-mkdir -p out
-make O=out ARCH=arm64 $DEFCONFIG
-
-echo -e "\nStarting compilation...\n"
-make -j$(nproc --all) O=out \
-					  ARCH=arm64 \
-					  CC=clang \
-					  LD=ld.lld \
-					  AR=llvm-ar \
-					  AS=llvm-as \
-					  NM=llvm-nm \
-					  OBJCOPY=llvm-objcopy \
-					  OBJDUMP=llvm-objdump \
-					  STRIP=llvm-strip \
-					  CROSS_COMPILE=aarch64-linux-android- \
-					  CROSS_COMPILE_COMPAT=arm-linux-gnueabi- \
-					  CLANG_TRIPLE=aarch64-linux-gnu- \
-					  Image \
-                                          dtb.img \
-					  dtbo.img
+# Repo info
+PARSE_BRANCH="$(git rev-parse --abbrev-ref HEAD)"
+PARSE_ORIGIN="$(git config --get remote.origin.url)"
+COMMIT_POINT="$(git log --pretty=format:'%h : %s' -1)"
+CHEAD="$(git rev-parse --short HEAD)"
+LATEST_COMMIT="[$COMMIT_POINT](https://github.com/Yuddciel/lonte/commit/$CHEAD)"
 
 # Telegram
 CHATID="-1001156668998" # Group/channel chatid (use rose/userbot to get it)
@@ -148,21 +134,26 @@ build_failed() {
 }
 
 # Building
-makekernel() {
-    echo "azrim@Hearthaka" > "$KERNEL_DIR"/.builderdata
-    export PATH="${COMP_PATH}"
-    make O=out ARCH=arm64 ${DEFCONFIG}
-    if [[ "${REGENERATE_DEFCONFIG}" =~ "true" ]]; then
-        regenerate
-    fi
-    if [[ "${COMP_TYPE}" =~ "clang" ]]; then
-        make -j$(nproc --all) CC=clang CROSS_COMPILE=aarch64-linux-gnu- O=out ARCH=arm64 LLVM=1 2>&1 | tee "$LOGS"
-    else
-      	make -j$(nproc --all) O=out ARCH=arm64 CROSS_COMPILE="${GCC_DIR}/bin/aarch64-elf-"
-    fi
-    # Check If compilation is success
-    packingkernel
-}
+mkdir -p out
+make O=out ARCH=arm64 $DEFCONFIG
+
+echo -e "\nStarting compilation...\n"
+make -j$(nproc --all) O=out \
+					  ARCH=arm64 \
+					  CC=clang \
+					  LD=ld.lld \
+					  AR=llvm-ar \
+					  AS=llvm-as \
+					  NM=llvm-nm \
+					  OBJCOPY=llvm-objcopy \
+					  OBJDUMP=llvm-objdump \
+					  STRIP=llvm-strip \
+					  CROSS_COMPILE=aarch64-linux-android- \
+					  CROSS_COMPILE_COMPAT=arm-linux-gnueabi- \
+					  CLANG_TRIPLE=aarch64-linux-gnu- \
+					  Image \
+                                          dtb.img \
+					  dtbo.img
 
 # Packing kranul
 if [ -f "out/arch/arm64/boot/Image" ] && [ -f "out/arch/arm64/boot/dtbo.img" ]; then
