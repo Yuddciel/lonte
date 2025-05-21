@@ -16,7 +16,7 @@ LOGS="${HOME}"/${CHEAD}.log
 
 # Repo URL
 ANYKERNEL_REPO="https://github.com/Yuddciel/AnyKernel3.git"
-ANYKERNEL_BRANCH="FSociety"
+ANYKERNEL_BRANCH="Hyper"
 
 # Repo info
 PARSE_BRANCH="$(git rev-parse --abbrev-ref HEAD)"
@@ -99,7 +99,7 @@ patch_config() {
 # Costumize
 patch_config
 versioning
-KERNEL="[MIUI]-SiLonT"
+KERNEL="[Hyper]SiLonT"
 DEVICE="Surya"
 KERNELNAME="${KERNEL}-${DEVICE}-${KERNELTYPE}-$(date +%y%m%d-%H%M)"
 TEMPZIPNAME="${KERNELNAME}-unsigned.zip"
