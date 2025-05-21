@@ -34,6 +34,13 @@ CLANG_FILE="${PWD}/clang.tar.gz"
 
 git clone https://gitlab.com/Panchajanya1999/azure-clang $CLANG_DIR
 
+export PATH=$(pwd)/azure-clang/bin:$PATH
+export CROSS_COMPILE=aarch64-linux-gnu-
+export CROSS_COMPILE_COMPAT=arm-linux-gnueabi-
+export LLVM=1
+export LLVM_IAS=1
+export ARCH=arm64
+
 if [[ "${COMP_TYPE}" =~ "clang" ]]; then
     CSTRING=$("$CLANG_DIR"/bin/clang --version | head -n 1 | perl -pe 's/\(http.*?\)//gs' | sed -e 's/  */ /g' -e 's/[[:space:]]*$//')
     COMP_PATH="$CLANG_DIR/bin:${PATH}"
