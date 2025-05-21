@@ -14,27 +14,25 @@ ANYKERNEL="${HOME}"/anykernel
 LOGS="${HOME}"/${CHEAD}.log
 
 # Repo URL
-ANYKERNEL_REPO="https://github.com/azrim/anykernel3.git"
-ANYKERNEL_BRANCH="master"
+ANYKERNEL_REPO="https://github.com/Yuddciel/AnyKernel3.git"
+ANYKERNEL_BRANCH="FSociety"
 
 # Repo info
 PARSE_BRANCH="$(git rev-parse --abbrev-ref HEAD)"
 PARSE_ORIGIN="$(git config --get remote.origin.url)"
 COMMIT_POINT="$(git log --pretty=format:'%h : %s' -1)"
 CHEAD="$(git rev-parse --short HEAD)"
-LATEST_COMMIT="[$COMMIT_POINT](https://github.com/silont-project/kernel_xiaomi_surya/commit/$CHEAD)"
-LOGS_URL="[See Drone CI Build Logs Here](https://cloud.drone.io/silont-project/kernel_xiaomi_surya/$DRONE_BUILD_NUMBER)"
+LATEST_COMMIT="[$COMMIT_POINT](https://github.com/Yuddciel/lonte/commit/$CHEAD)"
 
 # Compiler
 mkdir -p "/mnt/workdir/silont-clang"
 COMP_TYPE="clang" # unset if want to use gcc as compiler
 CLANG_DIR="/mnt/workdir/silont-clang"
-CLANG_URL="https://github.com/silont-project/silont-clang/archive/20210117.tar.gz"
 GCC_DIR="" # Doesn't needed if use proton-clang
 GCC32_DIR="" # Doesn't needed if use proton-clang
 CLANG_FILE="/mnt/workdir/clang.tar.gz"
 
-git clone https://gitlab.com/zlatanr/dora-clang-1 --depth=1 --single-branch $CLANG_DIR
+git clone https://gitlab.com/Panchajanya1999/azure-clang $CLANG_DIR
 
 if [[ "${COMP_TYPE}" =~ "clang" ]]; then
     CSTRING=$("$CLANG_DIR"/bin/clang --version | head -n 1 | perl -pe 's/\(http.*?\)//gs' | sed -e 's/  */ /g' -e 's/[[:space:]]*$//')
@@ -48,8 +46,8 @@ DEFCONFIG="surya_defconfig"
 REGENERATE_DEFCONFIG="" # unset if don't want to regenerate defconfig
 
 # Telegram
-CHATID="-1001156668998" # Group/channel chatid (use rose/userbot to get it)
-TELEGRAM_TOKEN="${TG_TOKEN}"
+CHATID="-1002354747626" # Group/channel chatid (use rose/userbot to get it)
+TELEGRAM_TOKEN="7485743487:AAEKPw9ubSKZKit9BDHfNJSTWcWax4STUZs"
 
 # Export Telegram.sh
 TELEGRAM_FOLDER="${HOME}"/telegram
@@ -124,7 +122,7 @@ build_failed() {
 
 # Building
 makekernel() {
-    echo "azrim@Hearthaka" > "$KERNEL_DIR"/.builderdata
+    echo "mahiroo@hirateam" > "$KERNEL_DIR"/.builderdata
     export PATH="${COMP_PATH}"
     make O=out ARCH=arm64 ${DEFCONFIG}
     if [[ "${REGENERATE_DEFCONFIG}" =~ "true" ]]; then
