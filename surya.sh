@@ -18,7 +18,7 @@ CLANG_DIR="${TC_DIR}/clang-rastamod"
 GCC_64_DIR="${LOCAL_DIR}toolchain/aarch64-linux-android-4.9"
 GCC_32_DIR="${LOCAL_DIR}toolchain/arm-linux-androideabi-4.9"
 AK3_DIR="${LOCAL_DIR}/AK3_DIR3"
-DEFCONFIG="vendor/surya_defconfig"
+DEFCONFIG="surya_defconfig"
 
 export PATH="$CLANG_DIR/bin:$PATH"
 export KBUILD_BUILD_USER="Mahirooo"
