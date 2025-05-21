@@ -11,8 +11,9 @@
 # Use this script on root of kernel directory
 
 SECONDS=0 # builtin bash timer
+KERNEL_DIR="${PWD}"
+cd "$KERNEL_DIR" || exit
 LOCAL_DIR=/workspace/Yuddciel/
-ZIPNAME="HyperOS:[HiraTeam]-$(TZ=Asia/Jakarta date +"%Y%m%d-%H%M").zip"
 TC_DIR="${LOCAL_DIR}toolchain"
 CLANG_DIR="${TC_DIR}/clang-rastamod"
 GCC_64_DIR="${LOCAL_DIR}toolchain/aarch64-linux-android-4.9"
@@ -223,5 +224,3 @@ tg_cast "*$DRONE_BUILD_NUMBER CI Build Triggered*" \
 	"*Latest commit:* ${LATEST_COMMIT}" \
  	"------------------------------------------" \
 	"${LOGS_URL}"
-
-makekernel
