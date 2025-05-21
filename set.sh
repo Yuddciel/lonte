@@ -1,29 +1,17 @@
-#!/usr/bin/env bash
-# 
-# Copyright (C) 2023 Edwiin Kusuma Jaya (ryuzenn)
+#!/bin/bash
 #
-# Simple Local Kernel Build Script
-#
-# Configured for Poco x3 NFC / Surya custom kernel source
-#
-# Setup build env with akhilnarang/scripts repo
-#
-# Use this script on root of kernel directory
+# Copyright (C) 2020 azrim.
+# All rights reserved.
 
-SECONDS=0 # builtin bash timer
+# Init
+LOCAL_DIR=/workspace/Yuddciel/
 KERNEL_DIR="${PWD}"
 cd "$KERNEL_DIR" || exit
-LOCAL_DIR=/workspace/Yuddciel/
-TC_DIR="${LOCAL_DIR}toolchain"
-CLANG_DIR="${TC_DIR}/clang-rastamod"
-GCC_64_DIR="${LOCAL_DIR}toolchain/aarch64-linux-android-4.9"
-GCC_32_DIR="${LOCAL_DIR}toolchain/arm-linux-androideabi-4.9"
-AK3_DIR="${LOCAL_DIR}AnyKernel3"
-DEFCONFIG="surya_defconfig"
 DTB_TYPE="" # define as "single" if want use single file
 KERN_IMG="${KERNEL_DIR}"/out/arch/arm64/boot/Image.gz   # if use single file define as Image.gz-dtb instead
 KERN_DTBO="${KERNEL_DIR}"/out/arch/arm64/boot/dtbo.img       # and comment this variable
 KERN_DTB="${KERNEL_DIR}"/out/arch/arm64/boot/dtb.img
+ANYKERNEL="${HOME}"/anykernel
 LOGS="${HOME}"/${CHEAD}.log
 
 # Repo URL
@@ -37,36 +25,26 @@ COMMIT_POINT="$(git log --pretty=format:'%h : %s' -1)"
 CHEAD="$(git rev-parse --short HEAD)"
 LATEST_COMMIT="[$COMMIT_POINT](https://github.com/Yuddciel/lonte/commit/$CHEAD)"
 
-export PATH="$CLANG_DIR/bin:$PATH"
-export KBUILD_BUILD_USER="Mahirooo"
-export KBUILD_BUILD_HOST="hirateam"
-export LD_LIBRARY_PATH="$CLANG_DIR/lib:$LD_LIBRARY_PATH"
-export KBUILD_BUILD_VERSION="1"
-export LOCALVERSION
+# Compiler
+mkdir -p "${LOCAL_DIR}silont-clang"
+COMP_TYPE="clang" # unset if want to use gcc as compiler
+CLANG_DIR="/workspace/Yuddciel/silont-clang"
+GCC_DIR="${LOCAL_DIR}toolchain/aarch64-linux-android-4.9" # Doesn't needed if use proton-clang
+GCC32_DIR="${LOCAL_DIR}toolchain/arm-linux-androideabi-4.9" # Doesn't needed if use proton-clang
+CLANG_FILE="/workspace/Yuddciel/clang.tar.gz"
 
-if ! [ -d "${CLANG_DIR}" ]; then
-echo "Clang not found! Cloning to ${TC_DIR}..."
-if ! git clone --depth=1 -b clang-21.0 https://gitlab.com/kutemeikito/rastamod69-clang ${CLANG_DIR}; then
-echo "Cloning failed! Aborting..."
-exit 1
-fi
-fi
+git clone --depth=1 -b clang-21.0 https://gitlab.com/kutemeikito/rastamod69-clang $CLANG_DIR
 
-if ! [ -d "${GCC_64_DIR}" ]; then
-echo "gcc not found! Cloning to ${GCC_64_DIR}..."
-if ! git clone --depth=1 -b lineage-19.1 https://github.com/LineageOS/android_prebuilts_gcc_linux-x86_aarch64_aarch64-linux-android-4.9.git ${GCC_64_DIR}; then
-echo "Cloning failed! Aborting..."
-exit 1
-fi
+if [[ "${COMP_TYPE}" =~ "clang" ]]; then
+    CSTRING=$("$CLANG_DIR"/bin/clang --version | head -n 1 | perl -pe 's/\(http.*?\)//gs' | sed -e 's/  */ /g' -e 's/[[:space:]]*$//')
+    COMP_PATH="$CLANG_DIR/bin:${PATH}"
+else
+    COMP_PATH="${GCC_DIR}/bin:${GCC32_DIR}/bin:${PATH}"
 fi
 
-if ! [ -d "${GCC_32_DIR}" ]; then
-echo "gcc_32 not found! Cloning to ${GCC_32_DIR}..."
-if ! git clone --depth=1 -b lineage-19.1 https://github.com/LineageOS/android_prebuilts_gcc_linux-x86_arm_arm-linux-androideabi-4.9.git ${GCC_32_DIR}; then
-echo "Cloning failed! Aborting..."
-exit 1
-fi
-fi
+# Defconfig
+DEFCONFIG="surya_defconfig"
+REGENERATE_DEFCONFIG="" # unset if don't want to regenerate defconfig
 
 # Telegram
 CHATID="-1002354747626" # Group/channel chatid (use rose/userbot to get it)
@@ -90,7 +68,7 @@ tg_ship() {
     "${TELEGRAM}" -f "${ZIPNAME}" -t "${TELEGRAM_TOKEN}" -c "${CHATID}" -H \
     "$(
                 for POST in "${@}"; do
-                       echo "${POST}"
+                        echo "${POST}"
                 done
     )"
 }
@@ -144,34 +122,29 @@ build_failed() {
 }
 
 # Building
-mkdir -p out
-make O=out ARCH=arm64 $DEFCONFIG
-
-echo -e "\nStarting compilation...\n"
-make -j$(nproc --all) O=out \
-					  ARCH=arm64 \
-					  CC=clang \
-					  LD=ld.lld \
-					  AR=llvm-ar \
-					  AS=llvm-as \
-					  NM=llvm-nm \
-					  OBJCOPY=llvm-objcopy \
-					  OBJDUMP=llvm-objdump \
-					  STRIP=llvm-strip \
-					  CROSS_COMPILE=aarch64-linux-android- \
-					  CROSS_COMPILE_COMPAT=arm-linux-gnueabi- \
-					  CLANG_TRIPLE=aarch64-linux-gnu- \
-					  Image.gz \
-                                          dtb.img \
-					  dtbo.img
+makekernel() {
+    echo "mahiroo@hirateam" > "$KERNEL_DIR"/.builderdata
+    export PATH="${COMP_PATH}"
+    make O=out ARCH=arm64 ${DEFCONFIG}
+    if [[ "${REGENERATE_DEFCONFIG}" =~ "true" ]]; then
+        regenerate
+    fi
+    if [[ "${COMP_TYPE}" =~ "clang" ]]; then
+        make -j$(nproc --all) CC=clang CROSS_COMPILE=aarch64-linux-gnu- O=out ARCH=arm64 LLVM=1 2>&1 | tee "$LOGS"
+    else
+      	make -j$(nproc --all) O=out ARCH=arm64 CROSS_COMPILE="${GCC_DIR}/bin/aarch64-elf-"
+    fi
+    # Check If compilation is success
+    packingkernel
+}
 
 # Packing kranul
 packingkernel() {
     # Copy compiled kernel
-    if [ -d "${AK3_DIR}" ]; then
-        rm -rf "${AK3_DIR}"
+    if [ -d "${ANYKERNEL}" ]; then
+        rm -rf "${ANYKERNEL}"
     fi
-    git clone "$ANYKERNEL_REPO" -b "$ANYKERNEL_BRANCH" "${AK3_DIR}"
+    git clone "$ANYKERNEL_REPO" -b "$ANYKERNEL_BRANCH" "${ANYKERNEL}"
     if ! [ -f "${KERN_IMG}" ]; then
         build_failed
     fi
@@ -179,15 +152,15 @@ packingkernel() {
         build_failed
     fi
     if [[ "${DTB_TYPE}" =~ "single" ]]; then
-        cp "${KERN_IMG}" "${AK3_DIR}"/Image.gz-dtb
+        cp "${KERN_IMG}" "${ANYKERNEL}"/Image.gz-dtb
     else
-        cp "${KERN_IMG}" "${AK3_DIR}"/Image.gz
-        cp "${KERN_DTBO}" "${AK3_DIR}"/dtbo.img
-        cp "${KERN_DTB}" "${AK3_DIR}"/dtb.img
+        cp "${KERN_IMG}" "${ANYKERNEL}"/Image.gz
+        cp "${KERN_DTBO}" "${ANYKERNEL}"/dtbo.img
+        cp "${KERN_DTB}" "${ANYKERNEL}"/dtb.img
     fi
 
     # Zip the kernel, or fail
-    cd "${AK3_DIR}" || exit
+    cd "${ANYKERNEL}" || exit
     zip -r9 "${TEMPZIPNAME}" ./* -x .git README.md *placeholder
 
     # Sign the zip before sending it to Telegram
@@ -224,3 +197,5 @@ tg_cast "*$DRONE_BUILD_NUMBER CI Build Triggered*" \
 	"*Latest commit:* ${LATEST_COMMIT}" \
  	"------------------------------------------" \
 	"${LOGS_URL}"
+
+makekernel
