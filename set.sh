@@ -96,6 +96,9 @@ patch_config() {
     sed -i 's/# CONFIG_LOCALVERSION_BRANCH_SHA is not set/CONFIG_LOCALVERSION_AUTO=y/g' arch/arm64/configs/"${DEFCONFIG}"
 }
 
+export KBUILD_BUILD_USER="Mahirooo"
+export KBUILD_BUILD_HOST="hirateam"
+
 # Costumize
 patch_config
 versioning
