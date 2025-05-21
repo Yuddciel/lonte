@@ -25,12 +25,12 @@ CHEAD="$(git rev-parse --short HEAD)"
 LATEST_COMMIT="[$COMMIT_POINT](https://github.com/Yuddciel/lonte/commit/$CHEAD)"
 
 # Compiler
-mkdir -p "/mnt/workdir/silont-clang"
+mkdir -p "${PWD}/azure-clang"
 COMP_TYPE="clang" # unset if want to use gcc as compiler
-CLANG_DIR="/mnt/workdir/silont-clang"
+CLANG_DIR="${PWD}/azure-clang"
 GCC_DIR="" # Doesn't needed if use proton-clang
 GCC32_DIR="" # Doesn't needed if use proton-clang
-CLANG_FILE="/mnt/workdir/clang.tar.gz"
+CLANG_FILE="${PWD}/clang.tar.gz"
 
 git clone https://gitlab.com/Panchajanya1999/azure-clang $CLANG_DIR
 
