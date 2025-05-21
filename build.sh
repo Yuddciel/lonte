@@ -19,6 +19,15 @@ GCC_64_DIR="${LOCAL_DIR}toolchain/aarch64-linux-android-4.9"
 GCC_32_DIR="${LOCAL_DIR}toolchain/arm-linux-androideabi-4.9"
 AK3_DIR="${LOCAL_DIR}AnyKernel3"
 DEFCONFIG="surya_defconfig"
+DTB_TYPE="" # define as "single" if want use single file
+KERN_IMG="${KERNEL_DIR}"/out/arch/arm64/boot/Image.gz   # if use single file define as Image.gz-dtb instead
+KERN_DTBO="${KERNEL_DIR}"/out/arch/arm64/boot/dtbo.img       # and comment this variable
+KERN_DTB="${KERNEL_DIR}"/out/arch/arm64/boot/dtb.img
+LOGS="${HOME}"/${CHEAD}.log
+
+# Repo URL
+ANYKERNEL_REPO="https://github.com/Yuddciel/AnyKernel3.git"
+ANYKERNEL_BRANCH="FSociety"
 
 # Repo info
 PARSE_BRANCH="$(git rev-parse --abbrev-ref HEAD)"
@@ -156,26 +165,25 @@ make -j$(nproc --all) O=out \
 					  dtbo.img
 
 # Packing kranul
-if [ -f "out/arch/arm64/boot/Image.gz-dtb" ] && [ -f "out/arch/arm64/boot/dtbo.img" ]; then
-echo -e "\nKernel compiled succesfully! Zipping up...\n"
-if [ -d "$AK3_DIR" ]; then
-cp -r $AK3_DIR AnyKernel3
-elif ! git clone -q https://github.com/ardia-kun/AnyKernel3; then
-echo -e "\nAnyKernel3 repo not found locally and cloning failed! Aborting..."
-exit 1
-fi
-cp out/arch/arm64/boot/Image.gz AnyKernel3
-cp out/arch/arm64/boot/dtbo.img AnyKernel3
-cp out/arch/arm64/boot/dtb.img AnyKernel3
-
-rm -f *zip
-cd AnyKernel3
-git checkout main &> /dev/null
-zip -r9 "../$ZIPNAME" * -x '*.git*' README.md *placeholder
-fi
-cd ..
-
-rm -rf AnyKernel3
+packingkernel() {
+    # Copy compiled kernel
+    if [ -d "${AK3_DIR}" ]; then
+        rm -rf "${AK3_DIR}"
+    fi
+    git clone "$ANYKERNEL_REPO" -b "$ANYKERNEL_BRANCH" "${AK3_DIR}"
+    if ! [ -f "${KERN_IMG}" ]; then
+        build_failed
+    fi
+    if ! [ -f "${KERN_DTBO}" ]; then
+        build_failed
+    fi
+    if [[ "${DTB_TYPE}" =~ "single" ]]; then
+        cp "${KERN_IMG}" "${AK3_DIR}"/Image.gz-dtb
+    else
+        cp "${KERN_IMG}" "${AK3_DIR}"/Image.gz
+        cp "${KERN_DTBO}" "${AK3_DIR}"/dtbo.img
+        cp "${KERN_DTB}" "${AK3_DIR}"/dtb.img
+    fi
 
     # Zip the kernel, or fail
     cd "${AK3_DIR}" || exit
