@@ -17,8 +17,15 @@ TC_DIR="${LOCAL_DIR}toolchain"
 CLANG_DIR="${TC_DIR}/clang-rastamod"
 GCC_64_DIR="${LOCAL_DIR}toolchain/aarch64-linux-android-4.9"
 GCC_32_DIR="${LOCAL_DIR}toolchain/arm-linux-androideabi-4.9"
-AK3_DIR="${LOCAL_DIR}/AnyKernel3"
+AK3_DIR="${LOCAL_DIR}AnyKernel3"
 DEFCONFIG="surya_defconfig"
+
+# Repo info
+PARSE_BRANCH="$(git rev-parse --abbrev-ref HEAD)"
+PARSE_ORIGIN="$(git config --get remote.origin.url)"
+COMMIT_POINT="$(git log --pretty=format:'%h : %s' -1)"
+CHEAD="$(git rev-parse --short HEAD)"
+LATEST_COMMIT="[$COMMIT_POINT](https://github.com/Yuddciel/lonte/commit/$CHEAD)"
 
 export PATH="$CLANG_DIR/bin:$PATH"
 export KBUILD_BUILD_USER="Mahirooo"
@@ -51,13 +58,6 @@ exit 1
 fi
 fi
 
-# Repo info
-PARSE_BRANCH="$(git rev-parse --abbrev-ref HEAD)"
-PARSE_ORIGIN="$(git config --get remote.origin.url)"
-COMMIT_POINT="$(git log --pretty=format:'%h : %s' -1)"
-CHEAD="$(git rev-parse --short HEAD)"
-LATEST_COMMIT="[$COMMIT_POINT](https://github.com/Yuddciel/lonte/commit/$CHEAD)"
-
 # Telegram
 CHATID="-1001156668998" # Group/channel chatid (use rose/userbot to get it)
 TELEGRAM_TOKEN="${TG_TOKEN}"
@@ -80,7 +80,7 @@ tg_ship() {
     "${TELEGRAM}" -f "${ZIPNAME}" -t "${TELEGRAM_TOKEN}" -c "${CHATID}" -H \
     "$(
                 for POST in "${@}"; do
-                        echo "${POST}"
+                       echo "${POST}"
                 done
     )"
 }
@@ -151,7 +151,7 @@ make -j$(nproc --all) O=out \
 					  CROSS_COMPILE=aarch64-linux-android- \
 					  CROSS_COMPILE_COMPAT=arm-linux-gnueabi- \
 					  CLANG_TRIPLE=aarch64-linux-gnu- \
-					  Image \
+					  Image.gz \
                                           dtb.img \
 					  dtbo.img
 
@@ -164,7 +164,7 @@ elif ! git clone -q https://github.com/ardia-kun/AnyKernel3; then
 echo -e "\nAnyKernel3 repo not found locally and cloning failed! Aborting..."
 exit 1
 fi
-cp out/arch/arm64/boot/Image.gz-dtb AnyKernel3
+cp out/arch/arm64/boot/Image.gz AnyKernel3
 cp out/arch/arm64/boot/dtbo.img AnyKernel3
 cp out/arch/arm64/boot/dtb.img AnyKernel3
 
