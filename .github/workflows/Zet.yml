@@ -6,23 +6,23 @@ on:
 jobs:
   build:
     name: Build Surya Kernel
-    runs-on: buildjet-16vcpu-ubuntu-2204-arm
+    runs-on: ubuntu-latest
 
     env:
       TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
       TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
 
     steps:
-      - name: 😶‍🌫️ Checkout Kernel Source
+      - name: Checkout Kernel Source
         uses: actions/checkout@v3
 
-      - name: ⏰ Set timezone 
+      - name: Set timezone 
         run: |
           echo "BUILD_TIME=$(TZ=Asia/Jakarta date '+%d%m%Y-%H%M')" >> $GITHUB_ENV
           sudo rm /etc/localtime
           sudo ln -s /usr/share/zoneinfo/Asia/Jakarta /etc/localtime
 
-      - name: ⚒️ Set Up Dependencies
+      - name: Set Up Dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y build-essential bc gcc-aarch64-linux-gnu gcc-arm-linux-gnueabi libssl-dev libfl-dev
@@ -31,19 +31,19 @@ jobs:
           sudo apt install device-tree-compiler -y
 
 
-      - name: ✨ Run SukiSU Kernel Setup
+      - name: Run SukiSU Kernel Setup
         run: |
           rm -rf "./KernelSU-Next"
           rm -rf "./drivers/kernelsu"
           curl -LSs "https://raw.githubusercontent.com/SukiSU-Ultra/SukiSU-Ultra/main/kernel/setup.sh" | bash -s susfs
 
-      - name: 💫 Clone ZyC Clang
+      - name: Clone ZyC Clang
         run: |
           mkdir clang
           wget "$(curl -s https://raw.githubusercontent.com/ZyCromerZ/Clang/main/Clang-main-link.txt)" -O "zyc-clang.tar.gz"
           tar -xvf zyc-clang.tar.gz -C clang && rm -rf zyc-clang.tar.gz
 
-      - name: 🤖 Set Environment Variables
+      - name: Set Environment Variables
         run: |
           echo "KERNEL_DEFCONFIG=surya_defconfig" >> $GITHUB_ENV
           echo "TOOLCHAIN=$(pwd)/clang" >> $GITHUB_ENV
@@ -52,7 +52,7 @@ jobs:
           echo "BUILD_HOST=android-build" >> $GITHUB_ENV
           echo "BUILD_TIME=$(date +%Y%m%d-%H%M)" >> $GITHUB_ENV
 
-      - name: 🌚 Send Telegram Notification - Build Started
+      - name: Send Telegram Notification - Build Started
         run: |
              CLANG_VER=$(./clang/bin/clang --version | head -n 1)
              curl -s -X POST https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage \
@@ -60,14 +60,14 @@ jobs:
              -d text="🚀 *Build Dimulai!* | 👾 *Using Clang*: ${CLANG_VER}" \
              -d parse_mode=Markdown
       
-      - name: 💤 Set Build Start Time
+      - name: Set Build Start Time
         run: echo "BUILD_START=$(date +%s)" >> $GITHUB_ENV
 
-      - name: 👀 Make Defconfig
+      - name: Make Defconfig
         run: |
           make O=out ARCH=arm64 ${KERNEL_DEFCONFIG}
 
-      - name: 🔥 Build Kernel
+      - name: Build Kernel
         run: |
           make -j$(nproc) O=out \
             ARCH=arm64 \
@@ -89,7 +89,7 @@ jobs:
             KBUILD_BUILD_HOST=${BUILD_HOST} 2>&1 | tee log.txt
         continue-on-error: true
 
-      - name: ☠️ Send Telegram Notification - Build Failed (if failed)
+      - name: Send Telegram Notification - Build Failed (if failed)
         if: failure()
         run: |
           curl -s -X POST https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendDocument \
@@ -98,13 +98,13 @@ jobs:
             -F caption="❌ Build kernel *gagal*! Berikut log-nya 🧾." \
             -F parse_mode=Markdown
 
-      - name: 🌝 Check Kernel Output Files
+      - name: Check Kernel Output Files
         run: |
           [[ -f out/arch/arm64/boot/Image.gz ]] || { echo "❌ Missing Image.gz"; exit 1; }
           [[ -f out/arch/arm64/boot/dtbo.img ]]  || { echo "❌ Missing dtbo.img"; exit 1; }
           [[ -f out/arch/arm64/boot/dtb.img ]]   || { echo "❌ Missing dtb.img"; exit 1; }
 
-      - name: 💓 Fetch AnyKernel3 and Package
+      - name: Fetch AnyKernel3 and Package
         run: |
           git clone --depth=1 https://github.com/rinnsakaguchi/AnyKernel3.git -b FSociety AnyKernel3
           cp out/arch/arm64/boot/Image.gz AnyKernel3/Image.gz
@@ -113,17 +113,10 @@ jobs:
           cd AnyKernel3
           zip -r9 ../Surya-Kernel-${{ env.BUILD_TIME }}.zip ./*
 
-      - name: ♥️ Send Build to Telegram
+      - name: Send Build to Telegram
         run: |
           curl -F document=@Surya-Kernel-${{ env.BUILD_TIME }}.zip \
           -F caption="Build Success With RvClang" \
           -F parse_mode=Markdown \
           "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendDocument?chat_id=${{ secrets.TELEGRAM_CHAT_ID }}"
       
-      - name: 🧧 Create GitHub Release
-        continue-on-error: true
-        uses: softprops/action-gh-release@v1
-        with:
-          tag_name: v${{ env.builddate }}.${{ github.run_number }}
-          files: "Surya-Kernel-${{ env.BUILD_TIME }}.zip"
-          generate_release_notes: true
