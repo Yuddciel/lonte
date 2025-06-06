@@ -61,10 +61,6 @@ jobs:
       - name: Set Build Start Time
         run: echo "BUILD_START=$(date +%s)" >> $GITHUB_ENV
 
-      - name: Make Defconfig
-        run: |
-          make O=out ARCH=arm64 surya_defconfig
-
       - name: Build Kernel
         run: |
           make -j$(nproc) O=out \
